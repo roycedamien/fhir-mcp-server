@@ -44,7 +44,7 @@ services:
     networks:
       - hapi-fhir_network
   fhir-converter:
-    image: mcr.microsoft.com/healthcareapis/fhir-converter:v7.0
+    image: mcr.microsoft.com/healthcareapis/fhir-converter:latest
     container_name: fhir-converter
     environment:
       ASPNETCORE_URLS: http://+:2019
