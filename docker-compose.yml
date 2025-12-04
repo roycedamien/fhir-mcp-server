@@ -1,6 +1,7 @@
 services:
   hapi-r4-postgresql:
     image: docker.io/hapiproject/hapi:v8.4.0-2
+    platform: linux/amd64
     environment:
       - spring.main.allow-bean-definition-overriding=true
       - hapi.fhir.cdshooks.enabled=true
@@ -24,14 +25,16 @@ services:
       - hapi-fhir_network
   postgresql-server:
     image: docker.io/postgres:17
+    platform: linux/amd64
     environment:
       - POSTGRES_PASSWORD=password
     ports: []
     networks:
       - hapi-fhir_network
   fhir-mcp-server:
-    build: . 
-    image: docker.io/wso2/fhir-mcp-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: fhir-mcp-server
     environment:
       FHIR_SERVER_BASE_URL: http://hapi-r4-postgresql:8080/fhir
@@ -44,7 +47,8 @@ services:
     networks:
       - hapi-fhir_network
   fhir-converter:
-    image: mcr.microsoft.com/healthcareapis/fhir-converter
+    image: mcr.microsoft.com/healthcareapis/fhir-converter:1.0.360-preview
+    platform: linux/amd64
     container_name: fhir-converter
     environment:
       ASPNETCORE_URLS: http://+:2019
