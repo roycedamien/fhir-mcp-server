@@ -550,4 +550,108 @@ The test suite includes:
 
 Coverage reports are generated in `htmlcov/index.html` for detailed analysis.
 
+## CDA XML Extraction and Validation Script
+
+The repository includes a utility script for extracting zipped medical record archives and validating CDA (Clinical Document Architecture) XML files before FHIR conversion.
+
+### Purpose
+
+The `scripts/extract_and_validate.py` script:
+- Extracts zip archives containing medical records to uniquely named folders based on file timestamps
+- Validates CDA XML files for proper structure and required elements
+- Generates comprehensive audit logs for evidence and traceability
+
+### Installation
+
+Install the script dependencies:
+
+```bash
+pip install -r scripts/requirements.txt
+```
+
+### Usage
+
+```bash
+# Extract and validate all zip files in a directory
+python scripts/extract_and_validate.py \
+  --source /path/to/zip/files \
+  --output /path/to/extract/to \
+  --log-dir /path/to/logs \
+  --verbose
+
+# Validate only (skip extraction)
+python scripts/extract_and_validate.py \
+  --source /path/to/zips \
+  --output /path/to/xmls \
+  --validate-only
+
+# Dry run to see what would happen
+python scripts/extract_and_validate.py \
+  --source /path/to/zips \
+  --output /path/to/output \
+  --dry-run -v
+
+# Strict mode (treat warnings as errors)
+python scripts/extract_and_validate.py \
+  --source /path/to/zips \
+  --output /path/to/output \
+  --strict
+```
+
+**CLI Options:**
+- `-s, --source`: Source directory containing zip files (required)
+- `-o, --output`: Output directory for extracted files (required)
+- `-l, --log-dir`: Directory for log files (default: `./logs`)
+- `--validate-only`: Skip extraction, only validate existing XML files
+- `--strict`: Treat warnings as errors
+- `-v, --verbose`: Enable verbose console output
+- `--dry-run`: Show what would be done without making changes
+
+### Log Files
+
+The script generates three log files for audit and evidence purposes:
+
+1. **`extraction_log.json`** - Audit trail for archive extractions:
+   - Extraction ID and timestamp
+   - Source file path and SHA256 hash
+   - Destination folder and extracted files
+   - Success/failure status and any errors
+
+2. **`validation_log.json`** - Detailed validation results per file:
+   - Validation ID and timestamp
+   - File path and SHA256 hash
+   - Validation result (valid/invalid)
+   - List of errors and warnings with codes
+   - Processing time in milliseconds
+
+3. **`errors_summary.json`** - Quick reference for all errors:
+   - Total files processed
+   - Count of files with errors
+   - Total errors and warnings
+   - List of files with errors and their error codes
+
+### Validation Error Codes
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| XML_001 | ERROR | Not well-formed XML |
+| XML_002 | ERROR | XML parsing failed |
+| CDA_001 | ERROR | Missing ClinicalDocument root element |
+| CDA_002 | ERROR | Invalid or missing CDA namespace |
+| CDA_003 | ERROR | Missing required header element |
+| CDA_004 | WARNING | Empty section detected |
+| CDA_005 | WARNING | Missing optional but recommended element |
+| ZIP_001 | ERROR | Failed to extract archive |
+| ZIP_002 | ERROR | Corrupted archive |
+| ZIP_003 | WARNING | No XML files found in archive |
+
+### CDA Validation Checks
+
+The script validates CDA XML files for:
+- Well-formed XML structure (parseable)
+- Correct CDA namespace (`urn:hl7-org:v3`)
+- Required `ClinicalDocument` root element
+- Required CDA header elements: `realmCode`, `typeId`, `id`, `code`, `title`, `effectiveTime`, `confidentialityCode`, `recordTarget`, `author`, `custodian`
+- Empty or malformed sections
+
 <!-- mcp-name: io.github.wso2/fhir-mcp-server -->
