@@ -96,7 +96,17 @@ def calculate_content_hash(content: bytes) -> str:
 
 
 def get_xml_file_timestamp(zip_ref: zipfile.ZipFile, xml_file: str) -> datetime | None:
-    """Get the modification timestamp of an XML file inside a zip archive."""
+    """
+    Get the modification timestamp of an XML file inside a zip archive.
+
+    Args:
+        zip_ref: An open ZipFile object.
+        xml_file: The name of the XML file within the archive.
+
+    Returns:
+        datetime: The modification timestamp of the file, or None if the file
+        is not found in the archive or has an invalid timestamp.
+    """
     try:
         info = zip_ref.getinfo(xml_file)
         # date_time is a tuple: (year, month, day, hour, minute, second)

@@ -16,34 +16,43 @@
 
 """Tests for extract_and_validate.py script."""
 
+import importlib.util
 import json
 import os
-import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
 import pytest
 
-# Add scripts directory to path to import the module
-scripts_dir = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_dir))
 
-from extract_and_validate import (
-    CDAValidator,
-    ExtractionLogger,
-    ValidationLogger,
-    ErrorSummaryLogger,
-    ExtractAndValidate,
-    calculate_file_hash,
-    calculate_content_hash,
-    format_folder_name,
-    create_error,
-    get_timestamp,
-    ERROR_CODES,
-    CDA_NAMESPACE,
-    REQUIRED_HEADER_ELEMENTS,
-)
+# Load the extract_and_validate module dynamically from the scripts directory
+# This avoids sys.path modification and makes the import explicit
+def _load_extract_and_validate_module():
+    """Load the extract_and_validate module from scripts directory."""
+    scripts_path = Path(__file__).parent.parent.parent / "scripts" / "extract_and_validate.py"
+    spec = importlib.util.spec_from_file_location("extract_and_validate", scripts_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_module = _load_extract_and_validate_module()
+
+# Import specific items from the loaded module
+CDAValidator = _module.CDAValidator
+ExtractionLogger = _module.ExtractionLogger
+ValidationLogger = _module.ValidationLogger
+ErrorSummaryLogger = _module.ErrorSummaryLogger
+ExtractAndValidate = _module.ExtractAndValidate
+calculate_file_hash = _module.calculate_file_hash
+calculate_content_hash = _module.calculate_content_hash
+format_folder_name = _module.format_folder_name
+create_error = _module.create_error
+get_timestamp = _module.get_timestamp
+ERROR_CODES = _module.ERROR_CODES
+CDA_NAMESPACE = _module.CDA_NAMESPACE
+REQUIRED_HEADER_ELEMENTS = _module.REQUIRED_HEADER_ELEMENTS
 
 
 class TestHelperFunctions:
@@ -159,8 +168,8 @@ class TestCDAValidator:
         
         assert is_valid is True
         assert len(errors) == 0
-        # Warnings for optional elements are expected
-        assert len(warnings) >= 0
+        # Warnings for optional elements (setId, versionNumber, languageCode) are expected
+        assert len(warnings) == 3  # Three optional header elements are missing
 
     def test_validate_malformed_xml(self, validator):
         """Test validation of malformed XML."""
