@@ -50,6 +50,7 @@ services:
       ASPNETCORE_URLS: http://+:2019
     ports:
       - "2019:2019"
+    restart: unless-stopped
     networks:
       - hapi-fhir_network
 networks:
