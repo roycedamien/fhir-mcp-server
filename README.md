@@ -171,7 +171,7 @@ You can run the MCP server using Docker for a consistent, isolated environment.
 
 #### Using Docker Compose with HAPI FHIR Server
 
-For a quick setup that includes both the FHIR MCP server and a HAPI FHIR server (with PostgreSQL), use the provided `docker-compose.yml`. This sets up an instant development environment for testing FHIR operations.
+For a quick setup that includes the FHIR MCP server, a HAPI FHIR server (with PostgreSQL), and the Microsoft FHIR Converter for CDA-to-FHIR conversion, use the provided `docker-compose.yml`. This sets up an instant development environment for testing FHIR operations and loading personal medical records from CDA/C-CDA documents.
 
 1. **Prerequisites:**
    - Docker and Docker Compose installed.
@@ -186,15 +186,58 @@ For a quick setup that includes both the FHIR MCP server and a HAPI FHIR server 
    - Start a PostgreSQL database container.
    - Launch the HAPI FHIR server (connected to PostgreSQL) listening on http://localhost:8080.
    - Build and run the FHIR MCP server container listening on http://localhost:8000, with `FHIR_SERVER_BASE_URL` set to http://hapi-r4-postgresql:8080/fhir.
+   - Start the Microsoft FHIR Converter listening on http://localhost:2019 for CDA-to-FHIR conversion.
 
 3. **Access the Services:**
    - FHIR MCP Server: http://localhost:8000
    - HAPI FHIR Server: http://localhost:8080
+   - FHIR Converter: http://localhost:2019
    - To stop run `docker-compose down`.
 
 4. **Configure Additional Environment Variables:**
 
    If you need to customize OAuth or other settings, adjust the env variables in the `docker-compose.yml`. The compose file sets basic configuration; refer to the [Configuration](#configuration) section for full options.
+
+5. **Converting CDA/C-CDA Documents to FHIR:**
+
+   The Microsoft FHIR Converter enables you to convert CDA (Clinical Document Architecture) and C-CDA documents into FHIR resources. This is useful for loading personal medical records into the FHIR server.
+
+   **Available API Endpoints:**
+   - `POST /api/convert/ccda/{template}` - Convert C-CDA to FHIR
+   - `GET /api/templates` - List available templates
+   - `GET /api/health` - Health check endpoint
+
+   **Supported C-CDA Templates:**
+   `CCD`, `ConsultationNote`, `DischargeSummary`, `HistoryandPhysical`, `OperativeNote`, `ProcedureNote`, `ProgressNote`, `ReferralNote`, `TransferSummary`
+
+   **Example: Convert a CDA file to FHIR**
+   ```bash
+   # Convert a CDA/C-CDA document to a FHIR Bundle using the CCD template
+   curl -X POST http://localhost:2019/api/convert/ccda/CCD \
+     -H "Content-Type: text/plain" \
+     --data-binary @your-cda-document.xml > converted-bundle.json
+   ```
+
+   **Example: Load the converted FHIR Bundle into HAPI FHIR**
+   ```bash
+   # Upload the converted FHIR bundle to the HAPI FHIR server
+   curl -X POST http://localhost:8080/fhir \
+     -H "Content-Type: application/fhir+json" \
+     -d @converted-bundle.json
+   ```
+
+   **Complete Workflow:**
+   ```bash
+   # Step 1: Convert your CDA document to FHIR
+   curl -X POST http://localhost:2019/api/convert/ccda/CCD \
+     -H "Content-Type: text/plain" \
+     --data-binary @my-medical-record.xml > my-fhir-bundle.json
+
+   # Step 2: Load the FHIR bundle into the server
+   curl -X POST http://localhost:8080/fhir \
+     -H "Content-Type: application/fhir+json" \
+     -d @my-fhir-bundle.json
+   ```
 
 ## Integration with MCP Clients
 
